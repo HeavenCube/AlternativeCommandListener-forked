@@ -28,7 +28,7 @@ public class CommandListener implements Listener {
         }
 
         String rawCommand = event.getMessage().substring(1);
-        if (addon.getConfig().getIgnoredCommands().stream().anyMatch(s -> addon.getConfig().isCaseInsensitive() ? s.equalsIgnoreCase(rawCommand) : s.equals(rawCommand)) == addon.getConfig().isShouldIgnore()) {
+        if (addon.getConfig().getIgnoredCommands().stream().anyMatch(s -> matchCommand(rawCommand, s)) == addon.getConfig().isShouldIgnore()) {
             return;
         }
 
@@ -48,5 +48,16 @@ public class CommandListener implements Listener {
             event.setCancelled(true);
             menuCommand.get(command).execute(event.getPlayer(), command, args);
         }
+    }
+
+    private boolean matchCommand(String rawCommand, String pattern) {
+        boolean caseInsensitive = addon.getConfig().isCaseInsensitive();
+        if (pattern.endsWith("*")) {
+            String prefix = pattern.substring(0, pattern.length() - 1);
+            return caseInsensitive
+                    ? rawCommand.regionMatches(true, 0, prefix, 0, prefix.length())
+                    : rawCommand.startsWith(prefix);
+        }
+        return caseInsensitive ? pattern.equalsIgnoreCase(rawCommand) : pattern.equals(rawCommand);
     }
 }
