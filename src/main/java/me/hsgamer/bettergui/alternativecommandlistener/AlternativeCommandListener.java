@@ -14,19 +14,15 @@ import java.io.File;
 public final class AlternativeCommandListener implements Expansion, GetPlugin, Reloadable, DataFolder {
     private final CommandConfig config = ConfigGenerator.newInstance(CommandConfig.class, new BukkitConfig(new File(getDataFolder(), "config.yml")));
     private final CommandListener commandListener = new CommandListener(this);
-    private final TabCompleteListener tabCompleteListener = new TabCompleteListener(this);
-    private final CommandResolver commandResolver = new CommandResolver();
 
     @Override
     public void onEnable() {
         Bukkit.getPluginManager().registerEvents(commandListener, getPlugin());
-        Bukkit.getPluginManager().registerEvents(tabCompleteListener, getPlugin());
     }
 
     @Override
     public void onDisable() {
         HandlerList.unregisterAll(commandListener);
-        HandlerList.unregisterAll(tabCompleteListener);
     }
 
     @Override
@@ -36,24 +32,5 @@ public final class AlternativeCommandListener implements Expansion, GetPlugin, R
 
     public CommandConfig getConfig() {
         return config;
-    }
-
-    public CommandResolver getCommandResolver() {
-        return commandResolver;
-    }
-
-    public boolean isIgnored(String rawCommand) {
-        return config.getIgnoredCommands().stream().anyMatch(s -> matchCommand(rawCommand, s)) == config.isShouldIgnore();
-    }
-
-    private boolean matchCommand(String rawCommand, String pattern) {
-        boolean caseInsensitive = config.isCaseInsensitive();
-        if (pattern.endsWith("*")) {
-            String prefix = pattern.substring(0, pattern.length() - 1);
-            return caseInsensitive
-                    ? rawCommand.regionMatches(true, 0, prefix, 0, prefix.length())
-                    : rawCommand.startsWith(prefix);
-        }
-        return caseInsensitive ? pattern.equalsIgnoreCase(rawCommand) : pattern.equals(rawCommand);
     }
 }
