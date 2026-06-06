@@ -53,13 +53,15 @@ public class CommandListener implements Listener {
                 try {
                     alternativeCommand.get().execute(event.getPlayer(), command, args);
                 } catch (Exception e) {
-                    BetterGUI.getInstance().getLogger().log(Level.WARNING, "Error executing alternative command: " + command, e);
+                    BetterGUI.getInstance().getLogger().log(Level.WARNING,
+                            "Error executing alternative command: " + command, e);
                 }
             }
             return;
         }
 
-        Map<String, Command> menuCommand = BetterGUI.getInstance().get(MenuCommandManager.class).getRegisteredMenuCommand();
+        Map<String, Command> menuCommand = BetterGUI.getInstance().get(MenuCommandManager.class)
+                .getRegisteredMenuCommand();
         if (addon.getConfig().isCaseInsensitive()) {
             menuCommand = new CaseInsensitiveStringMap<>(menuCommand);
         }
@@ -104,7 +106,7 @@ public class CommandListener implements Listener {
                 event.setCompletions(completions);
             }
         } catch (Exception e) {
-            // Defensive coding
+            // Safe fallback
         }
     }
 
@@ -119,7 +121,8 @@ public class CommandListener implements Listener {
             return Optional.empty();
         }
 
-        Map<String, Command> menuCommands = BetterGUI.getInstance().get(MenuCommandManager.class).getRegisteredMenuCommand();
+        Map<String, Command> menuCommands = BetterGUI.getInstance().get(MenuCommandManager.class)
+                .getRegisteredMenuCommand();
         if (!menuCommands.values().contains(command)) {
             return Optional.empty();
         }
@@ -152,7 +155,8 @@ public class CommandListener implements Listener {
     }
 
     private boolean isIgnored(String rawCommand) {
-        return addon.getConfig().getIgnoredCommands().stream().anyMatch(s -> matchCommand(rawCommand, s)) == addon.getConfig().isShouldIgnore();
+        return addon.getConfig().getIgnoredCommands().stream().anyMatch(s -> matchCommand(rawCommand, s)) == addon
+                .getConfig().isShouldIgnore();
     }
 
     private boolean matchCommand(String rawCommand, String pattern) {
