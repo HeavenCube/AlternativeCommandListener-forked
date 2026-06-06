@@ -15,6 +15,7 @@ public final class AlternativeCommandListener implements Expansion, GetPlugin, R
     private final CommandConfig config = ConfigGenerator.newInstance(CommandConfig.class, new BukkitConfig(new File(getDataFolder(), "config.yml")));
     private final CommandListener commandListener = new CommandListener(this);
     private final TabCompleteListener tabCompleteListener = new TabCompleteListener(this);
+    private final CommandResolver commandResolver = new CommandResolver();
 
     @Override
     public void onEnable() {
@@ -35,6 +36,10 @@ public final class AlternativeCommandListener implements Expansion, GetPlugin, R
 
     public CommandConfig getConfig() {
         return config;
+    }
+
+    public CommandResolver getCommandResolver() {
+        return commandResolver;
     }
 
     public boolean isIgnored(String rawCommand) {

@@ -11,6 +11,8 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 public class CommandListener implements Listener {
@@ -28,15 +30,28 @@ public class CommandListener implements Listener {
         }
 
         String rawCommand = event.getMessage().substring(1);
-        if (addon.isIgnored(rawCommand)) {
+        String[] split = SPACE_PATTERN.split(rawCommand);
+        if (split.length == 0) {
             return;
         }
 
-        String[] split = SPACE_PATTERN.split(rawCommand);
         String command = split[0];
         String[] args = new String[0];
         if (split.length > 1) {
             args = Arrays.copyOfRange(split, 1, split.length);
+        }
+
+        if (addon.isIgnored(rawCommand)) {
+            Optional<Command> alternativeCommand = addon.getCommandResolver().findAlternativeCommand(command);
+            if (alternativeCommand.isPresent()) {
+                event.setCancelled(true);
+                try {
+                    alternativeCommand.get().execute(event.getPlayer(), command, args);
+                } catch (Exception e) {
+                    BetterGUI.getInstance().getLogger().log(Level.WARNING, "Error executing alternative command: " + command, e);
+                }
+            }
+            return;
         }
 
         Map<String, Command> menuCommand = BetterGUI.getInstance().get(MenuCommandManager.class).getRegisteredMenuCommand();
