@@ -5,6 +5,7 @@ import me.hsgamer.bettergui.manager.MenuCommandManager;
 import me.hsgamer.hscore.collections.map.CaseInsensitiveStringMap;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandMap;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -13,6 +14,7 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.TabCompleteEvent;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,37 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 public class CommandListener implements Listener {
+    private static final Method COMMAND_MAP_METHOD;
+    private static final Method KNOWN_COMMANDS_METHOD;
+    private static final Field KNOWN_COMMANDS_FIELD;
+
+    static {
+        Method commandMapMethod = null;
+        try {
+            commandMapMethod = Bukkit.getServer().getClass().getMethod("getCommandMap");
+        } catch (Exception e) {
+            // ignore
+        }
+        COMMAND_MAP_METHOD = commandMapMethod;
+
+        Method knownCommandsMethod = null;
+        Field knownCommandsField = null;
+        try {
+            knownCommandsMethod = SimpleCommandMap.class.getDeclaredMethod("getKnownCommands");
+        } catch (NoSuchMethodException e) {
+            try {
+                knownCommandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
+                knownCommandsField.setAccessible(true);
+            } catch (Exception ex) {
+                // ignore
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        KNOWN_COMMANDS_METHOD = knownCommandsMethod;
+        KNOWN_COMMANDS_FIELD = knownCommandsField;
+    }
+
     private static final Pattern SPACE_PATTERN = Pattern.compile("\\s");
     private final AlternativeCommandListener addon;
 
@@ -106,7 +139,7 @@ public class CommandListener implements Listener {
                 event.setCompletions(completions);
             }
         } catch (Exception e) {
-            // Safe fallback
+            // Keep the current completions if the delegated command cannot complete safely
         }
     }
 
@@ -142,16 +175,23 @@ public class CommandListener implements Listener {
 
     @SuppressWarnings("unchecked")
     private Map<String, Command> getKnownCommands() {
-        try {
-            Field field = Bukkit.getPluginManager().getClass().getDeclaredField("commandMap");
-            field.setAccessible(true);
-            Object commandMap = field.get(Bukkit.getPluginManager());
-            Field knownField = SimpleCommandMap.class.getDeclaredField("knownCommands");
-            knownField.setAccessible(true);
-            return (Map<String, Command>) knownField.get(commandMap);
-        } catch (Exception e) {
+        if (COMMAND_MAP_METHOD == null) {
             return null;
         }
+        try {
+            CommandMap commandMap = (CommandMap) COMMAND_MAP_METHOD.invoke(Bukkit.getServer());
+            if (commandMap == null) {
+                return null;
+            }
+            if (KNOWN_COMMANDS_METHOD != null) {
+                return (Map<String, Command>) KNOWN_COMMANDS_METHOD.invoke(commandMap);
+            } else if (KNOWN_COMMANDS_FIELD != null) {
+                return (Map<String, Command>) KNOWN_COMMANDS_FIELD.get(commandMap);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
     }
 
     private boolean isIgnored(String rawCommand) {
