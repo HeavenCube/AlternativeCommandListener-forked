@@ -1,7 +1,22 @@
-version: 2
+﻿version: 2
+
 updates:
-- package-ecosystem: maven
-  directory: "/"
-  schedule:
-    interval: weekly
-  open-pull-requests-limit: 10
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "cron"
+      cronjob: "0 6 * * *"
+      timezone: "Europe/Paris"
+
+    open-pull-requests-limit: 20
+    rebase-strategy: "auto"
+
+    labels:
+      - "dependencies"
+      - "maven"
+      - "java"
+
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
